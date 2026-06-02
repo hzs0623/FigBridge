@@ -8,3 +8,6 @@
 * 双协议接入：同时支持 MCP Server（Cursor/Windsurf）和 REST Skill URL（Claude Code），覆盖主流 AI 编码工具
 * Skill 端点自动生成：推送设计快照后自动创建可访问的 Skill URL，开发者只需将 URL 配置到 AI 工具即可
 * 增量更新：设计变更后重新推送，Skill 端点自动刷新缓存，无需重新配置
+
+## 在线预览
+地址： https://hzs0623.github.io/FigBridge
