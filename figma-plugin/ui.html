@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --figma-bg: #FFFFFF;
+      --figma-text: #333333;
+      --figma-text-secondary: #777777;
+      --figma-border: #E6E6E6;
+      --brand-color: #18A0FB;
+      --brand-purple: #9747FF;
+      --bg-panel: #F5F5F5;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 16px;
+      margin: 0;
+      background-color: var(--figma-bg);
+      color: var(--figma-text);
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 32px);
+      box-sizing: border-box;
+    }
+    
+    /* 工具栏 */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-shrink: 0;
+    }
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+      color: var(--figma-text-secondary);
+    }
+    .btn-toggle-config {
+      background: none;
+      border: 1px solid var(--figma-border);
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 4px;
+      color: var(--figma-text-secondary);
+      cursor: pointer;
+    }
+    .btn-toggle-config:hover { background: var(--bg-panel); color: var(--figma-text); }
+
+    /* 配置面板 */
+    .config-panel {
+      display: none; 
+      background: var(--bg-panel);
+      border: 1px solid var(--figma-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 14px;
+      flex-shrink: 0;
+    }
+    .config-panel.open { display: block; }
+    .input-group { display: flex; gap: 8px; }
+    input[type="text"] {
+      flex: 1; border: 1px solid var(--figma-border); border-radius: 4px;
+      padding: 8px 10px; font-size: 12px; outline: none; background: #FFF;
+    }
+    input[type="text"]:focus { border-color: var(--brand-color); box-shadow: 0 0 0 1px var(--brand-color); }
+
+    /* 🌲 可视化预览核心容器 */
+    .preview-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      margin-bottom: 14px;
+      overflow-y: auto;
+    }
+
+    /* 占位提示 */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: 12px;
+      border: 2px dashed var(--figma-border);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    /* 选中的图层精美卡片 */
+    .layer-card {
+      border: 1px solid var(--figma-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #FFF;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .layer-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid #F0F0F0;
+      padding-bottom: 6px;
+    }
+    .layer-badge {
+      font-size: 9px;
+      font-weight: 700;
+      background: #E1F3FF;
+      color: #0066CC;
+      padding: 2px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    .layer-name {
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    /* 属性网格 */
+    .props-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      font-size: 11px;
+      color: #555;
+      margin-bottom: 8px;
+    }
+    .prop-item span { color: #999; margin-right: 4px; }
+
+    /* 样式徽章与颜色小方块 */
+    .style-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+      padding-top: 4px;
+    }
+    .color-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #F5F5F5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-family: monospace;
+    }
+    .color-box {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .asset-badge {
+      background: #EADBFF;
+      color: #6200EE;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* 按钮与凭证 */
+    button { font-size: 12px; font-weight: 600; padding: 10px 16px; border-radius: 6px; cursor: pointer; border: none; transition: all 0.15s ease; }
+    button:active { transform: scale(0.98); }
+    .btn-save { background: #2C3E50; color: white; white-space: nowrap; }
+    .btn-container { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+    .btn-generate { background-color: var(--brand-color); color: white; font-size: 13px; }
+    .btn-generate:hover { background-color: #0d8de3; }
+    .btn-generate:disabled { background-color: #E6E6E6; color: #B3B3B3; cursor: not-allowed; }
+    .btn-fetch { background-color: var(--brand-purple); color: white; }
+    .btn-fetch:hover { background-color: #7B2CBF; }
+    .btn-fetch:disabled { background-color: #F0E6FF; color: #D1B3FF; cursor: not-allowed; }
+
+    .skill-card { border: 1px dashed var(--brand-purple); background: #F9F5FF; border-radius: 6px; padding: 10px; margin-bottom: 14px; display: none; flex-shrink: 0; }
+    .skill-url { font-family: monospace; font-size: 11px; color: var(--brand-purple); word-break: break-all; background: #FFF; padding: 6px; border-radius: 4px; border: 1px solid #EADBFF; margin-top: 4px; }
+    .status-bar { font-size: 11px; color: #666; text-align: center; margin-top: 6px; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div class="section-title">图层资产解析器</div>
+    <button id="toggleConfigBtn" class="btn-toggle-config">⚙️ 配置服务器</button>
+  </div>
+
+  <div id="configPanel" class="config-panel">
+    <div class="section-title" style="margin-bottom: 6px;">接收端 Webhook 地址</div>
+    <div class="input-group">
+      <input type="text" id="serverUrl" value="http://localhost:3333/api/generate" placeholder="http://localhost:3333/api/generate">
+      <button id="saveBtn" class="btn-save">保存配置</button>
+    </div>
+  </div>
+
+  <div class="preview-container" id="previewContainer">
+    <div class="empty-state" id="emptyState">
+      <span>💡 请在 Figma 画布中选中任意图层...<br><br>插件将自动提取其完整的样式、SVG 和节点树资产。</span>
+    </div>
+    <div id="layerList"></div>
+  </div>
+
+  <div id="skillCard" class="skill-card">
+    <div class="section-title" style="color: var(--brand-purple);">🔑 已生成 Skill 消费凭证</div>
+    <div id="skillUrl" class="skill-url">等待生成...</div>
+  </div>
+
+  <div class="btn-container">
+    <button id="generateBtn" class="btn-generate" disabled>🧱 1. 点击生成（同步资产树到服务端）</button>
+    <button id="fetchBtn" class="btn-fetch" disabled>🔄 2. 模拟拉取消费（验证解耦链路）</button>
+  </div>
+
+  <div id="statusBar" class="status-bar">就绪</div>
+
+  <script>
+    let currentPayload = null; // 默默在内存里存下准备发给服务器的完整 JSON 树
+    let activeSkillUrl = ""; 
+
+    // 初始化配置
+    parent.postMessage({ pluginMessage: { type: "GET_CONFIG" } }, '*');
+
+    document.getElementById("toggleConfigBtn").onclick = () => {
+      document.getElementById("configPanel").classList.toggle("open");
+    };
+
+    // 监听来自 Figma 主进程 (code.js) 的消息
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      if (msg.type === "INIT_CONFIG" && msg.url) {
+        document.getElementById("serverUrl").value = msg.url;
+      }
+      
+      // 核心改动：收到数据后进行可视化渲染，而非直接倾倒 JSON 源码
+      if (msg.type === "SELECTION_DATA") {
+        currentPayload = msg.data; // 完整大 JSON 留给外发
+        renderVisualPreview(msg.data); // 渲染精致的视觉面板
+        document.getElementById("generateBtn").disabled = false;
+        updateStatus(`已捕获 ${msg.data.length} 个图层的完整资产。`);
+      }
+
+      if (msg.type === "SELECTION_CLEAR") {
+        currentPayload = null;
+        document.getElementById("layerList").innerHTML = "";
+        document.getElementById("emptyState").style.display = "flex";
+        document.getElementById("generateBtn").disabled = true;
+        updateStatus("未选中任何内容");
+      }
+    };
+
+    // 💅 核心逻辑：将复杂的 JSON 提取成易读的“属性卡片”
+    function renderVisualPreview(nodes) {
+      document.getElementById("emptyState").style.display = "none";
+      const listContainer = document.getElementById("layerList");
+      listContainer.innerHTML = ""; // 清空上一次
+
+      nodes.forEach(node => {
+        const card = document.createElement("div");
+        card.className = "layer-card";
+
+        // 1. 组装卡片头部
+        let subNodesCount = node.children ? countNodes(node.children) : 0;
+        let subText = subNodesCount > 0 ? `(含 ${subNodesCount} 个子节点)` : '';
+        
+        // 2. 提取并展示填充颜色
+        let colorHtml = '';
+        if (node.fills && Array.isArray(node.fills)) {
+          node.fills.forEach(fill => {
+            if (fill.type === 'SOLID' && fill.color) {
+              const r = Math.round(fill.color.r * 255);
+              const g = Math.round(fill.color.g * 255);
+              const b = Math.round(fill.color.b * 255);
+              const hex = "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+              colorHtml += `
+                <div class="color-chip">
+                  <div class="color-box" style="background-color: ${hex};"></div>
+                  <span>${hex}</span>
+                </div>
+              `;
+            }
+          });
+        }
+
+        // 3. 提取文本字号
+        let textStyleHtml = '';
+        if (node.type === 'TEXT' && node.fontSize) {
+          textStyleHtml = `<div class="color-chip">📝 字号: ${node.fontSize}px</div>`;
+        }
+
+        // 4. 是否包含内联 SVG
+        let svgHtml = node.svgString ? `<div class="asset-badge">⚡ 已集成内联 SVG 资产</div>` : '';
+
+        // 渲染单张卡片 HTML 结构
+        card.innerHTML = `
+          <div class="layer-header">
+            <span class="layer-badge">${node.type}</span>
+            <span class="layer-name" title="${node.name}">${node.name} ${subText}</span>
+          </div>
+          <div class="props-grid">
+            <div class="prop-item"><span>宽:</span>${Math.round(node.width)}px</div>
+            <div class="prop-item"><span>高:</span>${Math.round(node.height)}px</div>
+            <div class="prop-item"><span>X:</span>${Math.round(node.x)}</div>
+            <div class="prop-item"><span>Y:</span>${Math.round(node.y)}</div>
+          </div>
+          <div class="style-section">
+            ${colorHtml}
+            ${textStyleHtml}
+            ${svgHtml}
+          </div>
+        `;
+        listContainer.appendChild(card);
+      });
+    }
+
+    // 递归计算子节点数量
+    function countNodes(children) {
+      let count = children.length;
+      children.forEach(c => {
+        if (c.children) count += countNodes(c.children);
+      });
+      return count;
+    }
+
+    // 保存配置
+    document.getElementById("saveBtn").onclick = () => {
+      const url = document.getElementById("serverUrl").value.trim();
+      parent.postMessage({ pluginMessage: { type: "SAVE_CONFIG", url } }, '*');
+      document.getElementById("configPanel").classList.remove("open");
+    };
+
+    // 【1. 点击生成】：默默把背后的完整 currentPayload JSON 树丢给后端
+    document.getElementById("generateBtn").onclick = async () => {
+      const url = document.getElementById("serverUrl").value.trim();
+      if (!url) { alert("请输入服务器接收地址！"); return; }
+
+      updateStatus("🚀 正在上传完整资产树到服务器...");
+      document.getElementById("generateBtn").disabled = true;
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: "GENERATE_SKILL",
+            nodes: currentPayload // 完整的包含层级、SVG、全部信息的 JSON
+          })
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          activeSkillUrl = resData.skillUrl || resData.url || ""; 
+          
+          if (activeSkillUrl) {
+            document.getElementById("skillUrl").innerText = activeSkillUrl;
+            document.getElementById("skillCard").style.display = "block";
+            document.getElementById("fetchBtn").disabled = false; 
+            updateStatus("✅ 资产已上传，Skill 凭证生成成功！");
+          }
+        } else {
+          updateStatus(`❌ 生成失败，状态码: ${response.status}`);
+        }
+      } catch (error) {
+        updateStatus("❌ 请求异常，请确认后端已配置跨域并启动");
+        alert(`请求失败：${error.message}`);
+      } finally {
+        document.getElementById("generateBtn").disabled = false;
+      }
+    };
+
+    // 【2. 模拟拉取消费】：拿回的原始复杂 JSON，我们在控制台打印或做提示，界面提示成功
+    document.getElementById("fetchBtn").onclick = async () => {
+      if (!activeSkillUrl) return;
+      
+      updateStatus("🔄 正在模拟消费拉取...");
+      document.getElementById("fetchBtn").disabled = true;
+
+      try {
+        const response = await fetch(activeSkillUrl, { method: 'GET' });
+        if (response.ok) {
+          const fetchedJson = await response.json();
+          console.log("🎯 [解耦消费端成功拉取到的完整 JSON 数据]:", fetchedJson);
+          updateStatus("🎯 消费端拉取成功！完整 JSON 已输出在浏览器控制台(Console)中。");
+        } else {
+          updateStatus(`❌ 拉取失败，错误码: ${response.status}`);
+        }
+      } catch (error) {
+        updateStatus("❌ 拉取异常。");
+      } finally {
+        document.getElementById("fetchBtn").disabled = false;
+      }
+    };
+
+    function updateStatus(text) {
+      document.getElementById("statusBar").innerText = text;
+    }
+  </script>
+</body>
+</html>

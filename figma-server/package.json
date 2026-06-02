@@ -1,0 +1,13 @@
+{
+  "name": "figma-node-bridge-server",
+  "version": "1.0.0",
+  "description": "Figma 插件数据解耦中转服务器",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}

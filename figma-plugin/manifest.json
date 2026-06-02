@@ -1,0 +1,17 @@
+{
+  "name": "Design Data Exporter",
+  "id": "design-data-exporter-nodes",
+  "api": "1.0.0",
+  "main": "code.js",
+  "ui": "ui.html",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "editorType": ["figma"],
+  
+  "networkAccess": {
+    "allowedDomains": [
+      "http://localhost:3333"
+    ],
+    "reasoning": "用于在本地开发调试阶段，将解析出的 Figma 节点 JSON 数据实时同步发送给本地的 Node.js 中转服务器。"
+  }
+}
